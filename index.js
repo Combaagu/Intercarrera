@@ -1,10 +1,26 @@
 const mqtt = require('mqtt');
+require("dotenv").config
 
 // Cambia esto por la URL de tu broker MQTT
 const url = 'mqtt://broker.emqx.io'; // Por ejemplo, para un broker local
 
 // Conectar al broker
 const client = mqtt.connect(url);
+
+const express = require('express');
+const connectDB = require('./database/db');
+
+const app = express();
+
+
+const PORT = process.env.PORT || 3000;
+// Conectar a MongoDB
+connectDB();
+
+// Rutas, middlewares, etc.
+
+
+
 
 client.on('connect', () => {
     console.log('Conectado al broker MQTT');
@@ -38,4 +54,8 @@ client.on('message', (topic, message) => {
 // Manejo de errores
 client.on('error', (err) => {
     console.error('Error de conexión:', err);
+});
+
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
