@@ -1,61 +1,27 @@
-const mqtt = require('mqtt');
-require("dotenv").config
+// index.js
+import express from 'express';
+import connectDB from './database/db.js';
+import cookieParser from 'cookie-parser';
+import userRoutes from './routes/authRoutes.js'; 
+import dotenv from 'dotenv';
 
-// Cambia esto por la URL de tu broker MQTT
-const url = 'mqtt://broker.emqx.io'; // Por ejemplo, para un broker local
 
-// Conectar al broker
-const client = mqtt.connect(url);
-
-const express = require('express');
-const connectDB = require('./database/db');
+dotenv.config();
 
 const app = express();
-
-
 const PORT = process.env.PORT || 3000;
-// Conectar a MongoDB
+
+// Conectaa la base de datos
 connectDB();
 
-// Rutas, middlewares, etc.
+// Middleware para parsear el cuerpo de las solicitudes
+app.use(express.json());
+app.use(cookieParser()); 
 
+// enrutado
+app.use('/api/auth', userRoutes);
 
-
-
-client.on('connect', () => {
-    console.log('Conectado al broker MQTT');
-
-    // Suscribirse a un tópico
-    const topic = 'toMQTT';
-    client.subscribe(topic, (err) => {
-        if (err) {
-            console.error('Error al suscribirse:', err);
-        } else {
-            console.log(`Suscrito al tópico: ${topic}`);
-        }
-    });
-
-    // Publicar un mensaje
-    const mensaje = 'Hola, MQTT!';
-    client.publish(topic, mensaje, (err) => {
-        if (err) {
-            console.error('Error al publicar el mensaje:', err);
-        } else {
-            console.log(`Mensaje enviado: ${mensaje}`);
-        }
-    });
-});
-
-// Manejar la recepción de mensajes
-client.on('message', (topic, message) => {
-    console.log(`Mensaje recibido en ${topic}: ${message.toString()}`);
-});
-
-// Manejo de errores
-client.on('error', (err) => {
-    console.error('Error de conexión:', err);
-});
-
+// Inicia el servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
