@@ -34,7 +34,7 @@ export const registrarUsuario = async (req, res) => {
     }
 };
 
-
+//Login con JWT en cookie
 export const loginUsuario = async (req, res) => {
     const { email, contraseña } = req.body;
 

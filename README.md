@@ -46,3 +46,13 @@ seria como el Home / de prueba para ver que el usuaria exista y este logueadop y
 
 # GET
 http://localhost:3000/api/auth/ 
+
+# --------------------------------------------------
+
+# Suscripcion broker sensor de datos 
+
+new MQTT
+
+v5 : broker.emqx.io
+
+topic : toMQTT 
