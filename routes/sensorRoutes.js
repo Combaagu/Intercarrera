@@ -1,9 +1,12 @@
 import express from 'express';
-import { saveSensorData } from '../controllers/sensorController.js';
+import { saveSensorData, getSensorData } from '../controllers/sensorController.js';
 
 const router = express.Router();
 
-// Ruta para obtener y guardar los datos del sensor
-router.get('/', saveSensorData);
+// datos historicos de los sensores
+router.get('/historico', getSensorData);
+
+// Ruta para guardar los datos del sensor 
+router.post('/', saveSensorData);
 
 export default router;
