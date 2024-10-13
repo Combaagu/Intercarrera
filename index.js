@@ -31,11 +31,12 @@
 import express from 'express';
 import connectDB from './database/db.js';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';  // Importa cors
 import sensorRoutes from './routes/sensorRoutes.js';
 import userRoutes from './routes/authRoutes.js';
 import dotenv from 'dotenv';
-import { initIO } from './socket.js';  // Importa la función para inicializar socket.io
-import './mqtt/mqttClient.js';  // Asegúrate de que el cliente MQTT se importe y funcione
+import { initIO } from './socket.js';
+import './mqtt/mqttClient.js';
 
 dotenv.config();
 
@@ -46,6 +47,10 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Middleware
+app.use(cors({
+    origin: 'http://localhost:3000', // Cambia esto al origen de tu frontend
+    credentials: true // Si necesitas manejar cookies o autenticación
+}));
 app.use(express.json());
 app.use(cookieParser());
 
