@@ -51,6 +51,7 @@ app.use(cors({
     origin: `http://localhost:${PORT}`,
     credentials: true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
