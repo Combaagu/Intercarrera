@@ -35,3 +35,19 @@ export const getSensorData = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener los datos del sensor.' });
     }
 };
+
+export const getSensorDataLast = async (req, res) => {
+    try {
+        const lastData = await Sensor.findOne().sort({ createdAt: -1 }); // Obtiene el último registro por la fecha de creación
+
+        if (!lastData) {
+            return res.status(404).json({ message: 'No se encontraron datos del sensor.' });
+        }
+
+        res.json(lastData);
+
+    } catch (error) {
+        console.error('Error al obtener los datos del sensor:', error);
+        res.status(500).json({ message: 'Error al obtener los datos del sensor.' });
+    }
+};
