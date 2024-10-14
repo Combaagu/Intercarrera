@@ -58,7 +58,7 @@
 //             const io = getIO();
 //             io.emit('estado', data);  // Envía datos a todos los clientes
 //             console.log('Estado enviado a los clientes vía WebSocket');
-            
+
 //         }
 
 //     } catch (error) {
@@ -86,11 +86,9 @@
 //     }
 // });
 
-
-// mqttClient.js
 import mqtt from 'mqtt';
-import { saveSensorData } from '../controllers/sensorController.js'; 
-import { getIO } from '../socket.js';  
+import { saveSensorData } from '../controllers/sensorController.js';
+import { getIO } from '../socket.js';
 
 // Conexión MQTT
 const client = mqtt.connect('mqtt://broker.emqx.io');
@@ -146,19 +144,12 @@ function determinarEstadoMascota(temperatura, humedad, luz) {
 }
 
 client.on('connect', () => {
+    // Suscribirse solo al topic toMQTT para recibir los datos
     client.subscribe('toMQTT', (err) => {
         if (err) {
-            console.error('Error al suscribirse al topic:', err);
+            console.error('Error al suscribirse al topic toMQTT:', err);
         } else {
             console.log('Suscrito al topic toMQTT');
-        }
-    });
-
-    client.subscribe('MQTTestado', (err) => {
-        if (err) {
-            console.error('Error al suscribirse al topic MQTTestado:', err);
-        } else {
-            console.log('Suscrito al topic MQTTestado');
         }
     });
 });
@@ -174,10 +165,10 @@ client.on('message', (topic, message) => {
 
             // Crear el objeto en el formato deseado
             const datosAguardar = {
-                estado: estadoMascota.comportamiento, // Asumiendo que comportamiento es el estado
-                razon: estadoMascota.comportamiento.includes('incómoda') 
-                        ? 'La temperatura está fuera de los rangos óptimos.' 
-                        : 'La mascota está en un estado óptimo.',
+                estado: estadoMascota.comportamiento,
+                razon: estadoMascota.comportamiento.includes('incómoda')
+                    ? 'La temperatura está fuera de los rangos óptimos.'
+                    : 'La mascota está en un estado óptimo.',
                 detalles: {
                     luz: data.luz,
                     temperatura: data.temperatura,
@@ -187,12 +178,18 @@ client.on('message', (topic, message) => {
 
             // Guardar el nuevo objeto en la base de datos
             saveSensorData(datosAguardar);
-        }
 
-        if (topic === 'MQTTestado') {
-            const estado = determinarEstadoMascota(data.temperatura, data.humedad, data.luz);
-            io.emit('estadoMascota', estado);  // Enviar el estado a todos los clientes
-            console.log('Estado de la mascota enviado:', estado);
+            // Publicar el estado de la mascota en el topic MQTTestado
+            client.publish('MQTTestado', JSON.stringify(datosAguardar), { retain: true }, (err) => {
+                if (err) {
+                    console.error('Error al publicar en MQTTestado:', err);
+                } else {
+                    console.log('Estado de la mascota publicado en MQTTestado:', datosAguardar);
+                }
+            });
+
+            // Emitir el estado a través de WebSocket
+            io.emit('estadoMascota', estadoMascota);
         }
 
     } catch (error) {
