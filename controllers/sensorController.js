@@ -1,19 +1,42 @@
 import Sensor from '../models/Sensor.js';
 
-export const saveSensorData = async (data) => {
-    // console.log('Datos recibidos:', data);
+// export const saveSensorData = async (data) => {
+//     // console.log('Datos recibidos:', data);
 
+//     try {
+//         const sensorData = new Sensor({
+//             estado: data.estado,
+//             razon: data.razon,
+//             detalles: {
+//                 luz: data.detalles.luz,
+//                 temperatura: data.detalles.temperatura,
+//                 humedad: data.detalles.humedad,
+//             },
+//         });
+
+//         await sensorData.save();
+
+//         console.log('Datos guardados en la base de datos:', sensorData);
+
+//     } catch (error) {
+//         console.error('Error al guardar los datos del sensor:', error);
+//     }
+// };
+
+export const saveSensorData = async (data) => {
     try {
+
         const sensorData = new Sensor({
-            estado: data.estado,
+            estado: data.estado, 
             razon: data.razon,
             detalles: {
-                luz: data.detalles.luz,
-                temperatura: data.detalles.temperatura,
-                humedad: data.detalles.humedad,
+                luz: data.detalles.luz,  
+                temperatura: data.detalles.temperatura,  
+                humedad: data.detalles.humedad,  
             },
         });
 
+        // Guardar el objeto en la base de datos
         await sensorData.save();
 
         console.log('Datos guardados en la base de datos:', sensorData);
@@ -22,7 +45,6 @@ export const saveSensorData = async (data) => {
         console.error('Error al guardar los datos del sensor:', error);
     }
 };
-
 
 
 // Obtener todos los datos del sensor (historial)
