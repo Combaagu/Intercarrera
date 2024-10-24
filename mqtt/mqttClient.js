@@ -139,6 +139,7 @@ client.on('message', (topic, message) => {
             // Publicar todo el estado en MQTT
             client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             io.emit('estadoMascota', estadoMascota);
+            io.emit('datosAguardar', datosAguardar);
         }
     } catch (error) {
         console.error('Error al procesar el mensaje MQTT:', error);
