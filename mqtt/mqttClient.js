@@ -16,7 +16,9 @@ let sueño = 0; // Inicialmente la mascota no tiene sueño
 let sueñoTimer;
 
 // Variables para los últimos datos de sensores
-let ultimaTemperatura, ultimaHumedad, ultimaLuz;
+let ultimaTemperatura = 0 
+let ultimaHumedad = 0 
+let ultimaLuz = 0
 
 // Función para iniciar o reiniciar el temporizador de hambre
 function iniciarTimerHambre() {
@@ -47,7 +49,7 @@ function iniciarTimerSueño() {
 
     // Iniciar un temporizador de 2 minutos (120000 milisegundos)
     sueñoTimer = setTimeout(() => {
-        sueño = 1; // La mascota tiene sueño
+        sueño = 0; // La mascota tiene sueño
         console.log("La mascota tiene sueño.");
 
         // Determinamos el estado de la mascota en general (actualizamos sueño)
@@ -158,6 +160,11 @@ function iniciarTimerHambre2() {
             // Emitir el nuevo estado de hambre a través de WebSocket
             const io = getIO();
             io.emit('hambreEstado', { hambre: nivelHambre });
+
+            if (nivelHambre == 0) {
+                const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, 0, sueño);
+        client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
+            }
         }
     }, 2000);
 }
@@ -190,6 +197,7 @@ client.on('connect', () => {
     });
 });
 
+//dwadwadwa
 
 
 // import express from 'express';
