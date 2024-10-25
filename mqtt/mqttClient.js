@@ -129,7 +129,7 @@ client.on('message', (topic, message) => {
             client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             io.emit('estadoMascota', estadoMascota);
         }
-    } catch (error) {
+     catch (error) {
         console.error('Error al procesar el mensaje MQTT:', error);
     }
 });
