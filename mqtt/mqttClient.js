@@ -146,6 +146,51 @@ client.on('message', (topic, message) => {
     }
 });
 
+let nivelHambre = 10;
+
+function iniciarTimerHambre2() {
+
+    setInterval(() => {
+        if (nivelHambre > 0) {
+            nivelHambre -= 1;
+            console.log(`Hambre actual: ${nivelHambre}`);
+
+            // Emitir el nuevo estado de hambre a través de WebSocket
+            const io = getIO();
+            io.emit('hambreEstado', { hambre: nivelHambre });
+        }
+    }, 2000);
+}
+
+client.on('connect', () => {
+    client.subscribe('toMQTT', (err) => {
+        if (err) console.error('Error al suscribirse al topic toMQTT:', err);
+        else {
+            console.log('Suscrito al topic toMQTT');
+            iniciarTimerHambre2(); // Iniciar el temporizador de hambre
+        }
+    });
+});
+
+client.on('connect', () => {
+    const io = getIO();
+    io.on('connection', (socket) => {
+        console.log('Cliente conectado');
+
+        // Escuchar el evento 'actualizarHambre'
+        socket.on('actualizarHambre', (nuevoHambre) => {
+            if (nuevoHambre >= 0 && nuevoHambre <= 10) {
+                nivelHambre = nuevoHambre; // Actualiza el nivel de hambre
+                console.log(`Nuevo nivel de hambre recibido: ${nivelHambre}`);
+
+                // Emitir el estado actualizado a todos los clientes
+                io.emit('hambreEstado', { hambre: nivelHambre });
+            }
+        });
+    });
+});
+
+
 
 // import express from 'express';
 // import mqtt from 'mqtt';
