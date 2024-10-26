@@ -125,7 +125,7 @@ client.on('message', (topic, message) => {
 });
 
 let nivelHambre = 10;
-
+let nivelSueño = 0;
 function iniciarTimerHambre2() {
 
     setInterval(() => {
@@ -151,6 +151,7 @@ client.on('connect', () => {
         else {
             console.log('Suscrito al topic toMQTT');
             iniciarTimerHambre2(); // Iniciar el temporizador de hambre
+            iniciarTimerSueño2()
         }
     });
 });
@@ -167,6 +168,42 @@ client.on('connect', () => {
                 console.log(`Nuevo nivel de hambre recibido: ${nivelHambre}`);
                 // Emitir el estado actualizado a todos los clientes
                 io.emit('hambreEstado', { hambre: nivelHambre });
+            }
+        });
+    });
+});
+
+//FUNCION SUEÑO
+function iniciarTimerSueño2() {
+
+    setInterval(() => {
+        if (nivelSueño < 10) {
+            nivelSueño += 1;
+            console.log(`Sueño actual: ${nivelSueño}`);
+
+            // Emitir el nuevo estado de hambre a través de WebSocket
+            const io = getIO();
+            io.emit('SueñoEstado', { sueño: nivelSueño });
+
+            if (nivelSueño == 10) {
+                const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, 0, sueño);
+        client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
+            }
+        }
+    }, 2000);
+}
+
+client.on('connect', () => {
+    const io = getIO();
+    io.on('connection', (socket) => {
+        console.log('Cliente conectado');
+
+        socket.on('actualizarSueño', (nuevoSueño) => {
+            if (nuevoSueño >= 0 && nuevoSueño <= 10) {
+                nivelSueño = nuevoSueño; 
+                console.log(`Nuevo nivel de sueño recibido: ${nuevoSueño}`);
+                // Emitir el estado actualizado a todos los clientes
+                io.emit('sueñoEstado', { sueño: nuevoSueño });
             }
         });
     });
