@@ -49,7 +49,7 @@
 //     res.cookie('token', token, { httpOnly: true}); // usar "secure: true" solo si utiliza HTTPS
 //     res.json({ mensaje: 'Login exitoso', usuario: { id: usuario._id, email: usuario.email } });
 // };
-
+/*
 import Usuario from '../models/User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -128,3 +128,4 @@ export const protegerRuta = (req, res, next) => {
 export const rutaProtegida = (req, res) => {
     res.json({ mensaje: 'Acceso a ruta protegida exitoso', usuario: req.user });
 };
+*/

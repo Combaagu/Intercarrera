@@ -1,9 +1,9 @@
 import express from 'express';
-import { registrarUsuario, loginUsuario } from '../controllers/authController.js';
-import verificarToken from '../middlewares/authMiddleware.js';
+//import { registrarUsuario, loginUsuario } from '../controllers/authController.js';
+//import verificarToken from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
-
+/*
 // Ruta para registrar usuario
 router.post('/registro', registrarUsuario);
 
@@ -14,5 +14,5 @@ router.post('/login', loginUsuario);
 router.get('/', verificarToken, (req, res) => {
     res.json({ usuarioId: req.usuarioId});
 });
-
+*/
 export default router;
