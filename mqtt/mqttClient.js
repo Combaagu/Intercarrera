@@ -14,6 +14,9 @@ let esperandoAlimentacion = false; // Bandera para saber si la mascota está esp
 let sueño = 0; // Inicialmente la mascota no tiene sueño
 let sueñoTimer;
 
+let triste = 0;
+let feliz = 1;
+
 // Variables para los últimos datos de sensores
 let ultimaTemperatura = 0 
 let ultimaHumedad = 0 
@@ -56,26 +59,6 @@ client.on('message', (topic, message) => {
 
         console.log("Datos recibidos:", data);
         console.log("Estado actual: hambre =", hambre, ", sueño =", sueño, ", esperandoAlimentacion =", esperandoAlimentacion);
-
-        // // Si la mascota está dormida, solo puede procesar el dato de "sueño = 1"
-        // if (sueño === 1) {
-        //     // Si la mascota está despierta, puede procesar los otros datos
-        //     if (data.sueño === 1) {
-        //         console.log("La mascota ya está despierta. El temporizador de sueño ya está activo.");
-        //         return; // No hacemos nada si ya está despierta
-        //     }
-        // } else if (sueño === 0) {
-        //     // Si la mascota está dormida, solo procesamos el dato sueño=1 para despertarla
-        //     if (data.sueño === 1) {
-        //         sueño = 1; // Despertar a la mascota
-        //         console.log("La mascota ha despertado.");
-        //         iniciarTimerSueño(); // Reiniciar el temporizador de sueño
-        //         return; // Salimos para no procesar más datos hasta que despierte
-        //     } else {
-        //         console.log("La mascota está dormida. No se procesan nuevos datos hasta que despierte.");
-        //         return; // No procesamos ningún dato adicional si la mascota está dormida
-        //     }
-        // }
 
        //Verificar si la mascota está esperando ser alimentada
         if (esperandoAlimentacion) {
@@ -124,8 +107,11 @@ client.on('message', (topic, message) => {
     }
 });
 
-let nivelHambre = 10;
-let nivelSueño = 0;
+let nivelHambre = 5;
+let nivelSueño = 5;
+let nivelTriste = 0;
+let nivelFeliz = 10;
+
 function iniciarTimerHambre2() {
 
     setInterval(() => {
@@ -152,6 +138,7 @@ client.on('connect', () => {
             console.log('Suscrito al topic toMQTT');
             iniciarTimerHambre2(); // Iniciar el temporizador de hambre
             iniciarTimerSueño2()
+            iniciarTimerHumor()
         }
     });
 });
@@ -208,6 +195,23 @@ client.on('connect', () => {
         });
     });
 });
+
+
+//FUNCION DEL HUMOR
+
+function iniciarTimerHumor() {
+    setInterval(() => {
+        if (nivelSueño === 10 && nivelHambre === 0 && nivelFeliz != 0 && nivelTriste != 10) {
+            nivelTriste += 1;
+            nivelFeliz -= 1;
+
+            const io = getIO();
+            // Combina ambos estados en un solo objeto
+            io.emit('humorEstado', { triste: nivelTriste, feliz: nivelFeliz });
+        }
+    }, 2000);
+}
+
 
 //dwadwadwa
 
