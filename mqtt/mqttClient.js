@@ -2,6 +2,7 @@ import mqtt from 'mqtt';
 import { saveSensorData } from '../controllers/sensorController.js';
 import { getIO } from '../socket.js';
 import { determinarEstadoMascota } from './logicaMascota.js'; // Importamos la lógica
+import { ArgumentError } from 'jwks-rsa';
 
 // Conexión MQTT
 const client = mqtt.connect('mqtt://broker.emqx.io');
@@ -11,36 +12,17 @@ let hambre = 1; // Inicialmente la mascota está llena
 let esperandoAlimentacion = false; // Bandera para saber si la mascota está esperando ser alimentada
 
 // Estado de sueño (0: no tiene sueño, 1: tiene sueño)
-let sueño = 0; // Inicialmente la mascota no tiene sueño
+let sueño = 1; // Inicialmente la mascota no tiene sueño
 let sueñoTimer;
+let esperandoSueño = false;
 
 let triste = 0;
 let feliz = 1;
 
 // Variables para los últimos datos de sensores
-let ultimaTemperatura = 0 
-let ultimaHumedad = 0 
+let ultimaTemperatura = 0
+let ultimaHumedad = 0
 let ultimaLuz = 0
-
-//Función para iniciar o reiniciar el temporizador de sueño
-function iniciarTimerSueño() {
-    if (sueñoTimer) {
-        clearTimeout(sueñoTimer);
-    }
-
-    // Iniciar un temporizador de 2 minutos (120000 milisegundos)
-    sueñoTimer = setTimeout(() => {
-        sueño = 0; // La mascota tiene sueño
-        console.log("La mascota tiene sueño.");
-
-        // Determinamos el estado de la mascota en general (actualizamos sueño)
-        const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, hambre, sueño);
-
-        // Publicar todo el estado en MQTT
-        client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
-
-    }, 12000000); 
-}
 
 client.on('connect', () => {
     client.subscribe('toMQTT', (err) => {
@@ -60,19 +42,30 @@ client.on('message', (topic, message) => {
         console.log("Datos recibidos:", data);
         console.log("Estado actual: hambre =", hambre, ", sueño =", sueño, ", esperandoAlimentacion =", esperandoAlimentacion);
 
-       //Verificar si la mascota está esperando ser alimentada
+        //Verificar si la mascota está esperando ser alimentada
         if (esperandoAlimentacion) {
             if (data.hambre === 1) {
                 // La mascota ha sido alimentada
                 hambre = 1; // La mascota está llena
                 esperandoAlimentacion = false; // Ya no espera más comida
                 console.log("La mascota ha sido alimentada.");
+                nivelHambre = 10
             } else {
                 console.log("La mascota está esperando ser alimentada. No se procesan nuevos datos.");
                 return; // Salir si está esperando alimentación y no se recibió hambre = 1
             }
         }
 
+        if (esperandoSueño) {
+            if (data.sueño === 1) {
+                sueño = 1;
+                esperandoSueño = false;
+                console.log("La mascota tiene sueño.");
+                nivelSueño = 10
+            } else {
+                return;
+            }
+        }
         // Procesamiento de datos de sensores (temperatura, humedad, luz) y hambre
         const temperatura = data.temperatura !== undefined ? data.temperatura : ultimaTemperatura;
         const humedad = data.humedad !== undefined ? data.humedad : ultimaHumedad;
@@ -99,7 +92,7 @@ client.on('message', (topic, message) => {
 
             // Publicar todo el estado en MQTT
             client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
-            io.emit('estadoMascota', estadoMascota);
+            //io.emit('estadoMascota', estadoMascota); CAMBIO ACADWAD
             io.emit('datosAguardar', datosAguardar);
         }
     } catch (error) {
@@ -107,10 +100,10 @@ client.on('message', (topic, message) => {
     }
 });
 
-let nivelHambre = 5;
-let nivelSueño = 5;
-let nivelTriste = 0;
-let nivelFeliz = 10;
+let nivelHambre = 10;
+let nivelSueño = 0;
+let nivelTriste = 8;
+let nivelFeliz = 2;
 
 function iniciarTimerHambre2() {
 
@@ -124,8 +117,13 @@ function iniciarTimerHambre2() {
             io.emit('hambreEstado', { hambre: nivelHambre });
 
             if (nivelHambre == 0) {
-                const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, 0, sueño);
-        client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
+                hambre = 0
+                esperandoAlimentacion = true;
+                console.log("entrooo")
+                ///  const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, hambre, sueño);
+                const estadoMascota = { hambre: 0 }
+                console.log(estadoMascota)
+                client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             }
         }
     }, 2000);
@@ -153,8 +151,17 @@ client.on('connect', () => {
             if (nuevoHambre >= 0 && nuevoHambre <= 10) {
                 nivelHambre = nuevoHambre; // Actualiza el nivel de hambre
                 console.log(`Nuevo nivel de hambre recibido: ${nivelHambre}`);
+              
                 // Emitir el estado actualizado a todos los clientes
                 io.emit('hambreEstado', { hambre: nivelHambre });
+
+                let bitSueño = nivelSueño < 10 ? 1 : 0;
+                const estadoMascota = {
+                    'sueño': bitSueño,
+                    hambre : 1
+                };
+                console.log(estadoMascota)
+                client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             }
         });
     });
@@ -173,8 +180,13 @@ function iniciarTimerSueño2() {
             io.emit('SueñoEstado', { sueño: nivelSueño });
 
             if (nivelSueño == 10) {
-                const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, 0, sueño);
-        client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
+                console.log("entrooo")
+                esperandoSueño = true
+                const estadoMascota = {
+                    'sueño': 0
+                };
+                console.log(estadoMascota)
+                client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             }
         }
     }, 2000);
@@ -187,9 +199,15 @@ client.on('connect', () => {
 
         socket.on('actualizarSueño', (nuevoSueño) => {
             if (nuevoSueño >= 0 && nuevoSueño <= 10) {
-                nivelSueño = nuevoSueño; 
+                nivelSueño = nuevoSueño;
                 console.log(`Nuevo nivel de sueño recibido: ${nuevoSueño}`);
-                // Emitir el estado actualizado a todos los clientes
+                let bitHambre = nivelHambre < 10 ? 1 : 0;
+                const estadoMascota = {
+                    'sueño': 1,
+                    hambre : bitHambre
+                };
+                console.log(estadoMascota)
+                client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
                 io.emit('sueñoEstado', { sueño: nuevoSueño });
             }
         });
@@ -209,93 +227,13 @@ function iniciarTimerHumor() {
             // Combina ambos estados en un solo objeto
             io.emit('humorEstado', { triste: nivelTriste, feliz: nivelFeliz });
         }
+        if (nivelFeliz == 0 && nivelTriste == 10) {
+            const estadoMascota = {
+                muerte: 0
+              }
+              
+            console.log(estadoMascota)
+            client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
+        }
     }, 2000);
 }
-
-
-//dwadwadwa
-
-
-// import express from 'express';
-// import mqtt from 'mqtt';
-// import { saveSensorData } from '../controllers/sensorController.js';
-// import { getIO } from '../socket.js';
-// import { determinarEstadoMascota } from './logicaMascota.js'; // Importamos la lógica
-
-// const app = express();
-// app.use(express.json());
-
-// // Conexión MQTT
-// const client = mqtt.connect('mqtt://broker.emqx.io');
-
-// // Estado de hambre (0: tiene hambre, 1: está llena)
-// let hambre = 1; // Inicialmente la mascota está llena
-// let hambreTimer;
-// let esperandoAlimentacion = false; // Bandera para saber si la mascota está esperando ser alimentada
-
-// // Estado de sueño (0: no tiene sueño, 1: tiene sueño)
-// let sueño = 0; // Inicialmente la mascota no tiene sueño
-// let sueñoTimer;
-
-// // Variables para los últimos datos de sensores
-// let ultimaTemperatura, ultimaHumedad, ultimaLuz;
-
-// // Función para iniciar o reiniciar el temporizador de hambre
-// // function iniciarTimerHambre() {
-// //     if (hambreTimer) {
-// //         clearTimeout(hambreTimer);
-// //     }
-
-// //     hambreTimer = setTimeout(() => {
-// //         hambre = 0;
-// //         esperandoAlimentacion = true;
-// //         console.log("La mascota tiene hambre. Esperando a que el otro equipo le dé de comer.");
-        
-// //         const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, hambre, sueño);
-// //         client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
-        
-// //     }, 30000); // 30 segundos en milisegundos
-// // }
-
-// // Función para iniciar o reiniciar el temporizador de sueño
-// // function iniciarTimerSueño() {
-// //     if (sueñoTimer) {
-// //         clearTimeout(sueñoTimer);
-// //     }
-
-// //     sueñoTimer = setTimeout(() => {
-// //         sueño = 1; // La mascota tiene sueño
-// //         console.log("La mascota tiene sueño.");
-
-// //         const estadoMascota = determinarEstadoMascota(ultimaTemperatura, ultimaHumedad, ultimaLuz, hambre, sueño);
-// //         client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
-
-// //     }, 120000); // 2 minutos en milisegundos
-// // }
-
-// client.on('connect', () => {
-//     client.subscribe('toMQTT', (err) => {
-//         if (err) console.error('Error al suscribirse al topic toMQTT:', err);
-//         else {
-//             console.log('Suscrito al topic toMQTT');
-//             iniciarTimerHambre(); // Iniciar el temporizador de hambre cuando se conecta
-//             iniciarTimerSueño(); // Iniciar el temporizador de sueño
-//         }
-//     });
-// });
-
-// client.on('message', (topic, message) => {
-//     try {
-//         const data = JSON.parse(message.toString());
-//         const io = getIO();
-
-//         console.log("Datos recibidos:", data);
-//         console.log("Estado actual: hambre =", hambre, ", sueño =", sueño, ", esperandoAlimentacion =", esperandoAlimentacion);
-
-//         // Lógica para procesar mensajes de MQTT
-//         // (Aquí va la lógica que ya tienes para manejar el estado de la mascota)
-        
-//     } catch (error) {
-//         console.error('Error al procesar el mensaje MQTT:', error);
-//     }
-// });
