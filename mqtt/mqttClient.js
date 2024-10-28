@@ -102,8 +102,8 @@ client.on('message', (topic, message) => {
 
 let nivelHambre = 10;
 let nivelSueño = 0;
-let nivelTriste = 8;
-let nivelFeliz = 2;
+let nivelTriste = 0;
+let nivelFeliz = 10;
 
 function iniciarTimerHambre2() {
 
@@ -189,7 +189,7 @@ function iniciarTimerSueño2() {
                 client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             }
         }
-    }, 2000);
+    }, 8000);
 }
 
 client.on('connect', () => {
