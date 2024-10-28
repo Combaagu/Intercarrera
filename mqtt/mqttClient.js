@@ -189,7 +189,7 @@ function iniciarTimerSueño2() {
                 client.publish('MQTTestado', JSON.stringify(estadoMascota), { retain: true });
             }
         }
-    }, 8000);
+    }, 2000);
 }
 
 client.on('connect', () => {
